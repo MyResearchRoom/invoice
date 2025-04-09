@@ -1,0 +1,52 @@
+CREATE TABLE `user` (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `name` varchar(100) NOT NULL,
+    `email` varchar(100) NOT NULL,
+    `password` varchar(255) NOT NULL,
+    `profile` longblob,
+    `profileContentType` varchar(50) DEFAULT NULL,
+    `role` enum ('Admin', 'User', 'Guest') NOT NULL,
+    `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `email` (`email`)
+) ENGINE = InnoDB AUTO_INCREMENT = 8 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE `invoice` (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `invoice_number` varchar(50) NOT NULL,
+    `client_name` varchar(255) NOT NULL,
+    `client_phone` varchar(20) NOT NULL,
+    `client_email` varchar(255) NOT NULL,
+    `gst_no` varchar(50) NOT NULL,
+    `client_address` text NOT NULL,
+    `pin_code` varchar(10) NOT NULL,
+    `total_amount` decimal(10, 2) NOT NULL,
+    `cgst` decimal(5, 2) NOT NULL,
+    `sgst` decimal(5, 2) NOT NULL,
+    `discount` decimal(5, 2) NOT NULL,
+    `total_payable_amount` decimal(10, 2) NOT NULL,
+    `total_payable_amount_in_words` varchar(255) DEFAULT NULL,
+    `department` enum ('wesolutize', 'myresearchroom') NOT NULL,
+    `invoice_date` longtext NOT NULL,
+    `due_days` varchar(50) DEFAULT NULL,
+    `signature` longblob,
+    `signature_content_type` varchar(50) DEFAULT NULL,
+    `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `invoice_number` (`invoice_number`)
+) ENGINE = InnoDB AUTO_INCREMENT = 36 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE `invoiceitems` (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `invoice_id` int NOT NULL,
+    `productCode` varchar(50) NOT NULL,
+    `description` text NOT NULL,
+    `price` decimal(10, 2) NOT NULL,
+    `quantity` int NOT NULL,
+    `productTotalAmt` decimal(10, 2) NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `invoice_id` (`invoice_id`),
+    CONSTRAINT `invoiceitems_ibfk_1` FOREIGN KEY (`invoice_id`) REFERENCES `invoice` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB AUTO_INCREMENT = 12 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
