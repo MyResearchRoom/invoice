@@ -1,10 +1,13 @@
 import mysql from 'mysql2';
-//import in .env
+
+import dotenv from 'dotenv';
+dotenv.config(); 
+//import in .envimport dotenv from 'dotenv';
 export const connection = mysql.createConnection({
-  host: 'wesolutizecms.cbb4kibga0qo.ap-south-1.rds.amazonaws.com',
-  user: 'admin',
-  password: 'wesolutize12345',
-  database: 'invoice'
+   host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
 });
 
 connection.connect((err) => {

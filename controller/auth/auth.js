@@ -18,7 +18,7 @@ export const validateUserRegistration = [
     .notEmpty().withMessage('Email is required')
     .isEmail().withMessage('Invalid email format')
     .custom(async (value) => {
-        const existingUser = await executeQuery('SELECT * FROM User WHERE email = ?', [value]);
+        const existingUser = await executeQuery('SELECT * FROM user WHERE email = ?', [value]);
         if (existingUser.length > 0) {
             throw new Error('Email already exists');
         }
@@ -82,7 +82,7 @@ export const register = async (req, res) => {
         }
 
         // Check if the user already exists
-        const existingUser = await executeQuery('SELECT * FROM User WHERE email = ?', [email]);
+        const existingUser = await executeQuery('SELECT * FROM user WHERE email = ?', [email]);
         if (existingUser.length > 0) {
             return res.status(400).json({ message: 'User already exists' });
         }
@@ -92,7 +92,7 @@ export const register = async (req, res) => {
 
         // Insert the new user with profile details
         await executeQuery(
-            'INSERT INTO User (name, email, password, role, profile, profileContentType) VALUES (?, ?, ?, ?, ?, ?)',
+            'INSERT INTO user (name, email, password, role, profile, profileContentType) VALUES (?, ?, ?, ?, ?, ?)',
             [name, email, hashedPassword, role, profile?.buffer, profile?.mimetype]
         );
 
@@ -115,7 +115,7 @@ export const loginUser = async (req, res) => {
 
     try {
         // Fetch user from database
-        const users = await executeQuery('SELECT * FROM User WHERE email = ?', [email]);
+        const users = await executeQuery('SELECT * FROM user WHERE email = ?', [email]);
         console.log('Fetched users:', users); // Log the fetched users
 
         if (users.length === 0) {
@@ -157,7 +157,7 @@ export const changePassword = async (req, res) => {
 
     try {
         // Fetch user from database
-        const users = await executeQuery('SELECT * FROM User WHERE id = ?', [id]);
+        const users = await executeQuery('SELECT * FROM user WHERE id = ?', [id]);
         if (users.length === 0) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -166,7 +166,7 @@ export const changePassword = async (req, res) => {
         const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
         // Update the password in the database
-        await executeQuery('UPDATE User SET password = ? WHERE id = ?', [hashedNewPassword, id]);
+        await executeQuery('UPDATE user SET password = ? WHERE id = ?', [hashedNewPassword, id]);
 
         res.status(200).json({ message: 'Password changed successfully' });
     } catch (error) {
@@ -184,13 +184,13 @@ export const deleteUser = async (req, res) => {
 
     try {
         // Check if user exists
-        const users = await executeQuery('SELECT * FROM User WHERE id = ?', [id]);
+        const users = await executeQuery('SELECT * FROM user WHERE id = ?', [id]);
         if (users.length === 0) {
             return res.status(404).json({ message: 'User not found' });
         }
 
         // Delete the user from the database
-        await executeQuery('DELETE FROM User WHERE id = ?', [id]);
+        await executeQuery('DELETE FROM user WHERE id = ?', [id]);
 
         res.status(200).json({ message: 'User deleted successfully' });
     } catch (error) {
@@ -206,7 +206,7 @@ export const deleteUser = async (req, res) => {
 export const getUsers = async (req, res) => {
     try {
         // Fetch users with role 'User'
-        const users = await executeQuery('SELECT id, name, email FROM User WHERE role = ?', ['User']);
+        const users = await executeQuery('SELECT id, name, email FROM user WHERE role = ?', ['User']);
 
         res.status(200).json(users);
     } catch (error) {
