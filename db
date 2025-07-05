@@ -50,3 +50,112 @@ CREATE TABLE `invoiceitems` (
     KEY `invoice_id` (`invoice_id`),
     CONSTRAINT `invoiceitems_ibfk_1` FOREIGN KEY (`invoice_id`) REFERENCES `invoice` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB AUTO_INCREMENT = 12 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+
+CREATE TABLE `employee_details` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `empCode` varchar(20) NOT NULL,
+  `name` varchar(100) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `mobileNumber` varchar(20) DEFAULT NULL,
+  `department` varchar(50) DEFAULT NULL,
+  `pfNumber` varchar(50) DEFAULT NULL,
+  `esiNumber` varchar(50) DEFAULT NULL,
+  `bankName` varchar(100) DEFAULT NULL,
+  `accountNumber` varchar(50) DEFAULT NULL,
+  `panNumber` varchar(20) DEFAULT NULL,
+  `dateOfJoining` date DEFAULT NULL,
+  `basicSalary` decimal(10,2) DEFAULT NULL,
+  `ctc` decimal(10,2) DEFAULT NULL,
+  `basicPayment` decimal(10,2) DEFAULT NULL,
+  `houseRentAllowance` decimal(10,2) DEFAULT NULL,
+  `conveyanceAllowance` decimal(10,2) DEFAULT NULL,
+  `medicalAllowance` decimal(10,2) DEFAULT NULL,
+  `specialAllowance` decimal(10,2) DEFAULT NULL,
+  `overtimeAllowance` decimal(10,2) DEFAULT NULL,
+  `additionalAllowance` decimal(10,2) DEFAULT NULL,
+  `professionalTax` decimal(10,2) DEFAULT NULL,
+  `tds` decimal(10,2) DEFAULT NULL,
+  `employeePfAmount` decimal(10,2) DEFAULT NULL,
+  `advanceSalary` decimal(10,2) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `empCode` (`empCode`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+CREATE TABLE `salary_slips` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `empCode` varchar(20) DEFAULT NULL,
+  `name` varchar(100) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `mobileNumber` varchar(15) DEFAULT NULL,
+  `department` varchar(100) DEFAULT NULL,
+  `pfNumber` varchar(100) DEFAULT NULL,
+  `esiNumber` varchar(100) DEFAULT NULL,
+  `bankName` varchar(100) DEFAULT NULL,
+  `accountNumber` varchar(50) DEFAULT NULL,
+  `panNumber` varchar(20) DEFAULT NULL,
+  `dateOfJoining` date DEFAULT NULL,
+  `basicSalary` decimal(10,2) DEFAULT NULL,
+  `ctc` decimal(10,2) DEFAULT NULL,
+  `basicPayment` decimal(10,2) DEFAULT NULL,
+  `houseRentAllowance` decimal(10,2) DEFAULT NULL,
+  `conveyanceAllowance` decimal(10,2) DEFAULT NULL,
+  `medicalAllowance` decimal(10,2) DEFAULT NULL,
+  `specialAllowance` decimal(10,2) DEFAULT NULL,
+  `overtimeAllowance` decimal(10,2) DEFAULT NULL,
+  `additionalAllowance` decimal(10,2) DEFAULT NULL,
+  `professionalTax` decimal(10,2) DEFAULT NULL,
+  `tds` decimal(10,2) DEFAULT NULL,
+  `employeePfAmount` decimal(10,2) DEFAULT NULL,
+  `advanceSalary` decimal(10,2) DEFAULT NULL,
+  `daysInMonth` int DEFAULT NULL,
+  `absentDays` int DEFAULT NULL,
+  `presentDays` int DEFAULT NULL,
+  `absentDaysInMonth` int DEFAULT NULL,
+  `leaveBalanceOpening` int DEFAULT NULL,
+  `leaveTakenInMonth` int DEFAULT NULL,
+  `leaveBalanceClosing` int DEFAULT NULL,
+  `paySlipMonth` varchar(20) DEFAULT NULL,
+  `generatedDate` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+ALTER TABLE `employee_details`
+ADD COLUMN `grossSalary` DECIMAL(10,2),
+ADD COLUMN `otherBenefits` DECIMAL(10,2),
+ADD COLUMN `grossSalaryWithBenefits` DECIMAL(10,2),
+ADD COLUMN `totalDeduction` DECIMAL(10,2),
+ADD COLUMN `netPay` DECIMAL(10,2),
+ADD COLUMN `netPayInWords` VARCHAR(255);
+
+ALTER TABLE `salary_slips`
+ADD COLUMN `loanOpeningBalance` DECIMAL(10,2) DEFAULT NULL,
+ADD COLUMN `loanDeductionCurrentMonth` DECIMAL(10,2) DEFAULT NULL,
+ADD COLUMN `loanBalance` DECIMAL(10,2) DEFAULT NULL;
+
+ALTER TABLE `salary_slips`
+ADD COLUMN `grossSalary` DECIMAL(10,2),
+ADD COLUMN `otherBenefits` DECIMAL(10,2),
+ADD COLUMN `grossSalaryWithBenefits` DECIMAL(10,2),
+ADD COLUMN `totalDeduction` DECIMAL(10,2),
+ADD COLUMN `netPay` DECIMAL(10,2),
+ADD COLUMN `netPayInWords` VARCHAR(255);
+
+
+CREATE TABLE IF NOT EXISTS clients (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  client_unique_id VARCHAR(255) UNIQUE,
+  client_name VARCHAR(255) NOT NULL,
+  client_email VARCHAR(255) NOT NULL,
+  client_contact_no VARCHAR(20) NOT NULL,
+  client_address TEXT NOT NULL,
+  gst_number VARCHAR(50),
+  pincode VARCHAR(10) NOT NULL,
+  company_name VARCHAR(255),
+  client_company_name VARCHAR(255),
+  contact_person_name VARCHAR(255),
+  contact_person_designation VARCHAR(255),
+  contact_person_contact_no VARCHAR(20),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
