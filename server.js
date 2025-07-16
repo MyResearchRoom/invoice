@@ -3,6 +3,13 @@ import cors from "cors";
 
 import authRouter from "./routes/auth/auth.js";
 import invoiceRoutes from "./routes/invoice/invoice.js";
+import employeeRoutes from "./routes/EmployeeDetails/employeeDetails.js"
+import salarySlipRoutes from "./routes/SalarySlips/salarySlips.js"
+import clientRoutes from "./routes/clientRoutes/clientRoutes.js"
+import receiptsRoutes from "./routes/Receipts/receipts.js"
+import countsRoutes from "./routes/Counts/counts.js"
+import oldreceiptsRoutes from "./routes/oldreceipt.js"
+
 
 
 
@@ -21,10 +28,18 @@ app.use(cors()); // this line is to enable CORS for cross-origin requests. It's 
 
 app.use(express.json()); // this line is to parse incoming JSON data into req.body
 
-app.get("/", (req, res) => res.send("welcome new03072025"));
+app.get("/", (req, res) => res.send("welcome new16072025"));
 
 app.use("/api/auth", authRouter); // this line is to use the user router for handling requests at /api/users
 app.use('/api/invoice', invoiceRoutes);
+app.use('/api/employee', employeeRoutes);
+app.use('/api/salarySlips', salarySlipRoutes);
+app.use('/api/client', clientRoutes);
+app.use('/api/receipts', receiptsRoutes);
+app.use('/api/counts', countsRoutes);
+app.use('/api/old', oldreceiptsRoutes);
+
+
 
 
 

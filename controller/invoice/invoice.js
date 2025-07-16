@@ -26,7 +26,7 @@ import { executeQuery } from '../../config/db.js';
 //     } = req.body;
 
 //     console.log(items);
-    
+
 //     console.log('📦 Full Request Body:', req.body);
 
 //     // Handling signature file
@@ -174,7 +174,7 @@ export const createInvoice = async (req, res) => {
             VALUES ?
         `;
 
-        const itemValues = JSON.parse(items).map(item => [  
+        const itemValues = JSON.parse(items).map(item => [
             invoiceId,
             item.productCode,
             item.description,
@@ -364,5 +364,59 @@ export const getInvoiceCountByDepartment = async (req, res) => {
         res.status(200).json(result[0] || { wesolutize_count: 0, myresearchroom_count: 0 });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching invoice counts', error });
+    }
+};
+
+
+
+
+
+
+//used in receipts
+export const getInvoiceDetailsByInvoiceNumber = async (req, res) => {
+    const { invoice_number } = req.params;
+
+    try {
+        const invoiceSql = `
+      SELECT id, invoice_number, department, client_name, client_phone, client_email, client_address, pin_code, gst_no, 
+             DATE_FORMAT(CONVERT_TZ(invoice_date, '+00:00', '+05:30'), '%Y-%m-%d') AS invoice_date, 
+             total_amount, discount, total_payable_amount, total_payable_amount_in_words, 
+             cgst, sgst, due_days, signature, signature_content_type
+      FROM invoice
+      WHERE invoice_number = ?`;
+
+        const invoiceResult = await executeQuery(invoiceSql, [invoice_number]);
+
+        if (invoiceResult.length === 0) {
+            return res.status(404).json({ message: 'No invoices found matching the criteria' });
+        }
+
+        const invoice = invoiceResult[0];
+
+        const itemsSql = `
+      SELECT productCode, description, price, quantity, productTotalAmt
+      FROM invoiceitems 
+      WHERE invoice_id = ?`;
+
+        const items = await executeQuery(itemsSql, [invoice.id]);
+
+        const receiptSql = `
+      SELECT SUM(amount_received) AS total_received
+      FROM receipts
+      WHERE invoice_id = ?`;
+
+        const receiptResult = await executeQuery(receiptSql, [invoice.id]);
+
+        const totalReceived = receiptResult[0].total_received || 0;
+        const remainingBalance = Number(invoice.total_payable_amount) - totalReceived;
+
+        invoice.items = items;
+        invoice.total_received = totalReceived;
+        invoice.remaining_balance = remainingBalance;
+
+        res.status(200).json(invoice);
+    } catch (error) {
+        console.error("Error fetching invoice:", error);
+        res.status(500).json({ message: 'Error fetching invoice', error });
     }
 };

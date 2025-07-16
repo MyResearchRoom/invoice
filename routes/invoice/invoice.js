@@ -1,12 +1,12 @@
 import express from 'express';
 import multer from 'multer';
-import { createInvoice, getFilteredInvoices, getInvoiceByNumber,  getInvoiceCountByDepartment, getInvoices } from '../../controller/invoice/invoice.js';
+import { createInvoice, getFilteredInvoices, getInvoiceByNumber, getInvoiceCountByDepartment, getInvoiceDetailsByInvoiceNumber, getInvoices } from '../../controller/invoice/invoice.js';
 
 const router = express.Router();
 
 // Configure multer to handle file uploads in memory
 const storage = multer.memoryStorage();
-const upload = multer({ 
+const upload = multer({
     storage: storage,
     limits: { fileSize: 1000000 }, // Maximum file size is 1MB
     fileFilter: (req, file, cb) => {
@@ -15,7 +15,7 @@ const upload = multer({
         } else {
             cb(new Error('File type not supported. Please upload a PNG or JPEG image.'));
         }
-    } 
+    }
 });
 
 // Route to create a new invoice
@@ -44,6 +44,12 @@ router.get('/getInvoiceByNumber/:invoice_number', getInvoiceByNumber);
 // Route to get department-wise invoice count
 router.get('/getInvoiceCountByDepartment', getInvoiceCountByDepartment);
 // http://localhost:8000/api/invoice/getInvoiceCountByDepartment
+
+
+
+//used in receipts
+router.get('/getInvoiceDetailsByInvoiceNumber/:invoice_number', getInvoiceDetailsByInvoiceNumber);
+// http://localhost:8000/api/invoice/getInvoiceDetailsByInvoiceNumber
 
 
 export default router;
