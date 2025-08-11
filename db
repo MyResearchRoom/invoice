@@ -1,0 +1,224 @@
+CREATE TABLE `user` (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `name` varchar(100) NOT NULL,
+    `email` varchar(100) NOT NULL,
+    `password` varchar(255) NOT NULL,
+    `profile` longblob,
+    `profileContentType` varchar(50) DEFAULT NULL,
+    `role` enum ('Admin', 'User', 'Guest') NOT NULL,
+    `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `email` (`email`)
+) ENGINE = InnoDB AUTO_INCREMENT = 8 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE `invoice` (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `invoice_number` varchar(50) NOT NULL,
+    `client_name` varchar(255) NOT NULL,
+    `client_phone` varchar(20) NOT NULL,
+    `client_email` varchar(255) NOT NULL,
+    `gst_no` varchar(50) NOT NULL,
+    `client_address` text NOT NULL,
+    `pin_code` varchar(10) NOT NULL,
+    `total_amount` decimal(10, 2) NOT NULL,
+    `cgst` decimal(5, 2) NOT NULL,
+    `sgst` decimal(5, 2) NOT NULL,
+    `discount` decimal(5, 2) NOT NULL,
+    `total_payable_amount` decimal(10, 2) NOT NULL,
+    `total_payable_amount_in_words` varchar(255) DEFAULT NULL,
+    `department` enum ('wesolutize', 'myresearchroom') NOT NULL,
+    `invoice_date` longtext NOT NULL,
+    `due_days` varchar(50) DEFAULT NULL,
+    `signature` longblob,
+    `signature_content_type` varchar(50) DEFAULT NULL,
+    `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `invoice_number` (`invoice_number`)
+) ENGINE = InnoDB AUTO_INCREMENT = 36 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE `invoiceitems` (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `invoice_id` int NOT NULL,
+    `productCode` varchar(50) NOT NULL,
+    `description` text NOT NULL,
+    `price` decimal(10, 2) NOT NULL,
+    `quantity` int NOT NULL,
+    `productTotalAmt` decimal(10, 2) NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `invoice_id` (`invoice_id`),
+    CONSTRAINT `invoiceitems_ibfk_1` FOREIGN KEY (`invoice_id`) REFERENCES `invoice` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB AUTO_INCREMENT = 12 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+
+CREATE TABLE `employee_details` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `empCode` varchar(20) NOT NULL,
+  `name` varchar(100) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `mobileNumber` varchar(20) DEFAULT NULL,
+  `department` varchar(50) DEFAULT NULL,
+  `pfNumber` varchar(50) DEFAULT NULL,
+  `esiNumber` varchar(50) DEFAULT NULL,
+  `bankName` varchar(100) DEFAULT NULL,
+  `accountNumber` varchar(50) DEFAULT NULL,
+  `panNumber` varchar(20) DEFAULT NULL,
+  `dateOfJoining` date DEFAULT NULL,
+  `basicSalary` decimal(10,2) DEFAULT NULL,
+  `ctc` decimal(10,2) DEFAULT NULL,
+  `basicPayment` decimal(10,2) DEFAULT NULL,
+  `houseRentAllowance` decimal(10,2) DEFAULT NULL,
+  `conveyanceAllowance` decimal(10,2) DEFAULT NULL,
+  `medicalAllowance` decimal(10,2) DEFAULT NULL,
+  `specialAllowance` decimal(10,2) DEFAULT NULL,
+  `overtimeAllowance` decimal(10,2) DEFAULT NULL,
+  `additionalAllowance` decimal(10,2) DEFAULT NULL,
+  `professionalTax` decimal(10,2) DEFAULT NULL,
+  `tds` decimal(10,2) DEFAULT NULL,
+  `employeePfAmount` decimal(10,2) DEFAULT NULL,
+  `advanceSalary` decimal(10,2) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `empCode` (`empCode`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+CREATE TABLE `salary_slips` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `empCode` varchar(20) DEFAULT NULL,
+  `name` varchar(100) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `mobileNumber` varchar(15) DEFAULT NULL,
+  `department` varchar(100) DEFAULT NULL,
+  `pfNumber` varchar(100) DEFAULT NULL,
+  `esiNumber` varchar(100) DEFAULT NULL,
+  `bankName` varchar(100) DEFAULT NULL,
+  `accountNumber` varchar(50) DEFAULT NULL,
+  `panNumber` varchar(20) DEFAULT NULL,
+  `dateOfJoining` date DEFAULT NULL,
+  `basicSalary` decimal(10,2) DEFAULT NULL,
+  `ctc` decimal(10,2) DEFAULT NULL,
+  `basicPayment` decimal(10,2) DEFAULT NULL,
+  `houseRentAllowance` decimal(10,2) DEFAULT NULL,
+  `conveyanceAllowance` decimal(10,2) DEFAULT NULL,
+  `medicalAllowance` decimal(10,2) DEFAULT NULL,
+  `specialAllowance` decimal(10,2) DEFAULT NULL,
+  `overtimeAllowance` decimal(10,2) DEFAULT NULL,
+  `additionalAllowance` decimal(10,2) DEFAULT NULL,
+  `professionalTax` decimal(10,2) DEFAULT NULL,
+  `tds` decimal(10,2) DEFAULT NULL,
+  `employeePfAmount` decimal(10,2) DEFAULT NULL,
+  `advanceSalary` decimal(10,2) DEFAULT NULL,
+  `daysInMonth` int DEFAULT NULL,
+  `absentDays` int DEFAULT NULL,
+  `presentDays` int DEFAULT NULL,
+  `absentDaysInMonth` int DEFAULT NULL,
+  `leaveBalanceOpening` int DEFAULT NULL,
+  `leaveTakenInMonth` int DEFAULT NULL,
+  `leaveBalanceClosing` int DEFAULT NULL,
+  `paySlipMonth` varchar(20) DEFAULT NULL,
+  `generatedDate` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+ALTER TABLE `employee_details`
+ADD COLUMN `grossSalary` DECIMAL(10,2),
+ADD COLUMN `otherBenefits` DECIMAL(10,2),
+ADD COLUMN `grossSalaryWithBenefits` DECIMAL(10,2),
+ADD COLUMN `totalDeduction` DECIMAL(10,2),
+ADD COLUMN `netPay` DECIMAL(10,2),
+ADD COLUMN `netPayInWords` VARCHAR(255);
+
+ALTER TABLE `salary_slips`
+ADD COLUMN `loanOpeningBalance` DECIMAL(10,2) DEFAULT NULL,
+ADD COLUMN `loanDeductionCurrentMonth` DECIMAL(10,2) DEFAULT NULL,
+ADD COLUMN `loanBalance` DECIMAL(10,2) DEFAULT NULL;
+
+ALTER TABLE `salary_slips`
+ADD COLUMN `grossSalary` DECIMAL(10,2),
+ADD COLUMN `otherBenefits` DECIMAL(10,2),
+ADD COLUMN `grossSalaryWithBenefits` DECIMAL(10,2),
+ADD COLUMN `totalDeduction` DECIMAL(10,2),
+ADD COLUMN `netPay` DECIMAL(10,2),
+ADD COLUMN `netPayInWords` VARCHAR(255);
+
+
+CREATE TABLE IF NOT EXISTS clients (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  client_unique_id VARCHAR(255) UNIQUE,
+  client_name VARCHAR(255) NOT NULL,
+  client_email VARCHAR(255) NOT NULL,
+  client_contact_no VARCHAR(20) NOT NULL,
+  client_address TEXT NOT NULL,
+  gst_number VARCHAR(50),
+  pincode VARCHAR(10) NOT NULL,
+  company_name VARCHAR(255),
+  client_company_name VARCHAR(255),
+  contact_person_name VARCHAR(255),
+  contact_person_designation VARCHAR(255),
+  contact_person_contact_no VARCHAR(20),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE employee_details
+ADD column company VARCHAR(50);
+
+
+CREATE TABLE receipts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  invoice_id INT,
+  receipt_number VARCHAR(50),
+  receipt_date DATE,
+  milestone_name VARCHAR(255),
+  amount_received DECIMAL(10,2),
+  total_received_so_far DECIMAL(10,2),
+  balance_remaining DECIMAL(10,2),
+  amount_in_words VARCHAR(255),
+  payment_mode ENUM('cash', 'bank_transfer', 'cheque', 'upi', 'other'),
+  transaction_ref VARCHAR(255),
+  authorized_by VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (invoice_id) REFERENCES invoice(id) ON DELETE CASCADE
+);
+
+ALTER TABLE user
+ADD COLUMN otp VARCHAR(10),
+
+ALTER TABLE user
+MODIFY COLUMN role ENUM('Admin', 'UserAll', 'EmployeeManager', 'ClientManager');
+
+
+
+--new
+
+CREATE TABLE receipt2 (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  receipt_number VARCHAR(50) UNIQUE,
+  client_id INT,
+  client_unique_id VARCHAR(255),
+  client_name VARCHAR(255),
+  mobile_number VARCHAR(20),
+  email VARCHAR(255),
+  gst_no VARCHAR(50),
+  address TEXT,
+  pin_code VARCHAR(10),
+  milestone_name VARCHAR(255),
+  amount_received DECIMAL(10, 2),
+  payment_mode VARCHAR(50),
+  transaction_ref VARCHAR(255),
+  receipt_date DATE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (client_id) REFERENCES clients(id)
+);
+
+ALTER TABLE receipt2
+ADD COLUMN payment_type ENUM('companyAccount', 'cash') DEFAULT 'cash';
+
+ALTER TABLE employee_details
+ADD COLUMN esiAmount DECIMAL(10, 2);
+
+ALTER TABLE salary_slips
+ADD COLUMN esiAmount DECIMAL(10,2) DEFAULT NULL AFTER employeePfAmount,
+ADD COLUMN leaveDeductionAmount DECIMAL(10,2) DEFAULT NULL AFTER advanceSalary,
+ADD COLUMN transactionId VARCHAR(255) AFTER loanBalance;

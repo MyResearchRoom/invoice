@@ -1,0 +1,19 @@
+
+
+For Admin Resister
+
+
+http://localhost:8000/api/auth/admin
+
+
+
+{
+    "name" : "admin2",
+    "email" : "admin2@gmail.com",
+    "password" : "Admin2@123"
+}
+
+
+
+
+fields = name,email,password,profile.
