@@ -1,11 +1,32 @@
 import ExcelJS from "exceljs"
 import { executeQuery } from '../../config/db.js';
 
+// 
+
 export const generateSalarySlip = async (req, res) => {
     try {
-        const { empCode, daysInMonth, absentDays, presentDays, absentDaysInMonth, leaveBalanceOpening, leaveTakenInMonth, leaveBalanceClosing, paySlipMonth, loanOpeningBalance, loanDeductionCurrentMonth, loanBalance, leaveDeductionAmount, transactionId } = req.body;
+        const { 
+            empCode, 
+            daysInMonth, 
+            absentDays, 
+            presentDays, 
+            absentDaysInMonth, 
+            leaveBalanceOpening, 
+            leaveTakenInMonth, 
+            leaveBalanceClosing, 
+            paySlipMonth, 
+            loanOpeningBalance, 
+            loanDeductionCurrentMonth, 
+            loanBalance, 
+            leaveDeductionAmount, 
+            transactionId,
+            salaryDate   // ✅ NEW FIELD ADDED
+        } = req.body;
 
-        const [employee] = await executeQuery(`SELECT * FROM employee_details WHERE empCode = ?`, [empCode]);
+        const [employee] = await executeQuery(
+            `SELECT * FROM employee_details WHERE empCode = ?`, 
+            [empCode]
+        );
 
         if (!employee) {
             return res.status(404).json({
@@ -43,30 +64,65 @@ export const generateSalarySlip = async (req, res) => {
         const netPay = grossSalaryWithBenefits - totalDeduction;
 
         const result = await executeQuery(`
-       INSERT INTO salary_slips (
-        empCode, name, email, mobileNumber, department, pfNumber, esiNumber, bankName,
-        accountNumber, panNumber, dateOfJoining, basicSalary, ctc, basicPayment, houseRentAllowance,
-        conveyanceAllowance, medicalAllowance, specialAllowance, overtimeAllowance,
-        additionalAllowance, professionalTax, tds, employeePfAmount, esiAmount, advanceSalary,
-        leaveDeductionAmount, daysInMonth, absentDays, presentDays, absentDaysInMonth,
-        leaveBalanceOpening, leaveTakenInMonth, leaveBalanceClosing, paySlipMonth,
-        loanOpeningBalance, loanDeductionCurrentMonth, loanBalance, transactionId,
-        grossSalary, otherBenefits, grossSalaryWithBenefits, totalDeduction, netPay
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-            employee.empCode, employee.name, employee.email, employee.mobileNumber, employee.department,
-            employee.pfNumber, employee.esiNumber, employee.bankName, employee.accountNumber,
-            employee.panNumber, employee.dateOfJoining, employee.basicSalary, employee.ctc,
-            employee.basicPayment, employee.houseRentAllowance, employee.conveyanceAllowance,
-            employee.medicalAllowance, employee.specialAllowance, employee.overtimeAllowance,
-            employee.additionalAllowance, employee.professionalTax, employee.tds,
-            employee.employeePfAmount, employee.esiAmount, employee.advanceSalary, leaveDeductionAmount,
-            daysInMonth, absentDays, presentDays, absentDaysInMonth, leaveBalanceOpening, leaveTakenInMonth, leaveBalanceClosing, formattedPaySlipMonth, loanOpeningBalance, loanDeductionCurrentMonth, loanBalance, transactionId, grossSalary, otherBenefits, grossSalaryWithBenefits, totalDeduction, netPay
+            INSERT INTO salary_slips (
+                empCode, name, email, mobileNumber, department, pfNumber, esiNumber, bankName,
+                accountNumber, panNumber, dateOfJoining, basicSalary, ctc, basicPayment, houseRentAllowance,
+                conveyanceAllowance, medicalAllowance, specialAllowance, overtimeAllowance,
+                additionalAllowance, professionalTax, tds, employeePfAmount, esiAmount, advanceSalary,
+                leaveDeductionAmount, daysInMonth, absentDays, presentDays, absentDaysInMonth,
+                leaveBalanceOpening, leaveTakenInMonth, leaveBalanceClosing, paySlipMonth, salaryDate,
+                loanOpeningBalance, loanDeductionCurrentMonth, loanBalance, transactionId,
+                grossSalary, otherBenefits, grossSalaryWithBenefits, totalDeduction, netPay
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+            employee.empCode,
+            employee.name,
+            employee.email,
+            employee.mobileNumber,
+            employee.department,
+            employee.pfNumber,
+            employee.esiNumber,
+            employee.bankName,
+            employee.accountNumber,
+            employee.panNumber,
+            employee.dateOfJoining,
+            employee.basicSalary,
+            employee.ctc,
+            employee.basicPayment,
+            employee.houseRentAllowance,
+            employee.conveyanceAllowance,
+            employee.medicalAllowance,
+            employee.specialAllowance,
+            employee.overtimeAllowance,
+            employee.additionalAllowance,
+            employee.professionalTax,
+            employee.tds,
+            employee.employeePfAmount,
+            employee.esiAmount,
+            employee.advanceSalary,
+            leaveDeductionAmount,
+            daysInMonth,
+            absentDays,
+            presentDays,
+            absentDaysInMonth,
+            leaveBalanceOpening,
+            leaveTakenInMonth,
+            leaveBalanceClosing,
+            formattedPaySlipMonth,
+            salaryDate, // ✅ NEW VALUE ADDED
+            loanOpeningBalance,
+            loanDeductionCurrentMonth,
+            loanBalance,
+            transactionId,
+            grossSalary,
+            otherBenefits,
+            grossSalaryWithBenefits,
+            totalDeduction,
+            netPay
         ]);
 
         const insertedId = result.insertId;
 
-        // Fetch the inserted record
         const [salarySlip] = await executeQuery(
             `SELECT * FROM salary_slips WHERE id = ?`,
             [insertedId]
@@ -87,6 +143,9 @@ export const generateSalarySlip = async (req, res) => {
         });
     }
 };
+
+
+
 
 export const getSalarySlips = async (req, res) => {
     try {

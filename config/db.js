@@ -9,7 +9,9 @@ export const pool = mysql.createPool({
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 20,
-  queueLimit: 0
+  queueLimit: 0,
+  timezone: '+05:30',   // ✅ STRING
+  dateStrings: true     // ✅ VERY IMPORTANT
 });
 
 // connection.connect((err) => {

@@ -28,7 +28,7 @@ app.use(cors()); // this line is to enable CORS for cross-origin requests. It's 
 
 app.use(express.json()); // this line is to parse incoming JSON data into req.body
 
-app.get("/", (req, res) => res.send("welcome new11082025"));
+app.get("/", (req, res) => res.send("welcome new13022026"));
 
 app.use("/api/auth", authRouter); // this line is to use the user router for handling requests at /api/users
 app.use('/api/invoice', invoiceRoutes);
