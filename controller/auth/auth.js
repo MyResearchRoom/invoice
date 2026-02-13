@@ -223,12 +223,72 @@ export const loginUser = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
 
         await executeQuery("UPDATE user SET otp = ? WHERE email = ?", [otp, email]);
+        // await transporter.sendMail({
+        //     from: process.env.EMAIL_USER,
+        //     to: email,
+        //     subject: "Your Login OTP",
+        //     html: `<p>Your OTP is <b>${otp}</b>. It is valid for 5 minutes.</p>`
+        // });
+
         await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: "Your Login OTP",
-            html: `<p>Your OTP is <b>${otp}</b>. It is valid for 5 minutes.</p>`
-        });
+  from: `"My Research Room" <${process.env.EMAIL_USER}>`,
+  to: email,
+  subject: "Your Secure Login OTP",
+  html: `
+  <div style="margin:0;padding:0;background-color:#f4f6f9;font-family:Arial,Helvetica,sans-serif;">
+    <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:30px auto;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 4px 10px rgba(0,0,0,0.05);">
+      
+      <!-- Header -->
+      <tr>
+        <td style="background:linear-gradient(90deg,#0688CA,#5A267F);padding:20px;text-align:center;">
+          <h2 style="color:#ffffff;margin:0;font-weight:600;">NeoWeSolutize Technology,Pune</h2>
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style="padding:30px 25px;color:#333333;">
+          <h3 style="margin-top:0;">Secure Login Verification</h3>
+          <p style="font-size:14px;line-height:1.6;">
+            Hello,
+          </p>
+          <p style="font-size:14px;line-height:1.6;">
+            Use the One-Time Password (OTP) below to complete your login process.
+            This OTP is valid for <b>5 minutes</b>.
+          </p>
+
+          <!-- OTP Box -->
+          <div style="margin:25px 0;text-align:center;">
+            <span style="display:inline-block;padding:15px 30px;font-size:26px;
+              letter-spacing:6px;font-weight:bold;
+              background:#f0f4ff;border:2px dashed #5A267F;
+              border-radius:8px;color:#5A267F;">
+              ${otp}
+            </span>
+          </div>
+
+          <p style="font-size:13px;color:#666;line-height:1.6;">
+            If you did not request this OTP, please ignore this email.
+          </p>
+
+          <p style="font-size:13px;color:#666;">
+            For security reasons, please do not share this OTP with anyone.
+          </p>
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td style="background:#f4f6f9;padding:15px;text-align:center;font-size:12px;color:#888;">
+          © ${new Date().getFullYear()} My Research Room. All rights reserved.
+        </td>
+      </tr>
+
+    </table>
+  </div>
+  `
+});
+
 
         return res.status(200).json({ message: "OTP sent to your email." });
     } catch (error) {

@@ -22,6 +22,9 @@ export const pool = mysql.createPool({
 //   console.log('Connected to the MySQL database.');
 // });
 
+
+
+
 export const executeQuery = (sql, params = []) => {
   return new Promise((resolve, reject) => {
     pool.query(sql, params, (error, results) => {
