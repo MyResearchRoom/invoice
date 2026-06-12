@@ -223,7 +223,7 @@ export const updateClient = async (req, res) => {
         client_address = ?, gst_number = ?, pincode = ?,
         client_company_name = ?, contact_person_name = ?,
         contact_person_designation = ?, contact_person_contact_no = ?
-      WHERE id = ?
+      WHERE client_unique_id = ?
     `;
 
     const params = [

@@ -7,6 +7,7 @@ import {
     deleteReceipt,
     getAllReceipts,
     downloadReceiptListExcel,
+    getReceiptsByReceiptId,
 } from '../../controller/Receipts/receipts.js';
 const router = express.Router();
 
@@ -14,6 +15,12 @@ router.post('/add-receipt', addReceipt); // Add receipt with auto generated rece
 // router.get('/invoice/:invoiceId', getReceiptsByInvoice); // Get by invoice ID
 router.get('/getAllReceipts', getAllReceipts);
 router.get('/invoice-number/:invoiceNumber', getReceiptsByInvoiceNumber);
+
+
+//get by id
+router.get('/getById/:receipt_id', getReceiptsByReceiptId);
+
+
 router.get('/by-client', getReceiptsByClient); // Get by client name
 router.put('/:receiptId', updateReceipt); // Update
 router.delete('/:receiptId', deleteReceipt); // Delete

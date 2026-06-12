@@ -105,6 +105,8 @@ export const addReceipt = async (req, res) => {
         const invoice = invoiceData[0];
         const invoice_id = invoice.id;
 
+        const totalPayable = parseFloat(invoice.total_payable_amount);
+
         // Get total amount received so far
         const totalRow = await executeQuery(
             'SELECT COALESCE(SUM(amount_received), 0) as total FROM receipts WHERE invoice_id = ?',
@@ -118,6 +120,13 @@ export const addReceipt = async (req, res) => {
         }
 
         const totalSoFar = totalSoFarBefore + parseFloat(amount_received);
+
+        if (totalSoFar > totalPayable) {
+            return res.status(400).json({
+                message: `Total received amount cannot exceed invoice amount (${totalPayable})`
+            });
+        }
+
         const balance = parseFloat(invoice.total_payable_amount) - totalSoFar;
 
         // ========= ✅ Generate Custom Receipt Number =========
@@ -127,14 +136,14 @@ export const addReceipt = async (req, res) => {
 
         // Extract company prefix from invoice_number (e.g., MRR or WES)
         const companyPrefix = invoice_number.split("-")[0];
-        const basePrefix = `${companyPrefix}-${year}${month}`; // MRR-202507
+        const basePrefix = `${companyPrefix}-RECP-${year}${month}`; // MRR-202507
 
         // Get the last receipt for this invoice_id using that base prefix
         const lastReceiptRow = await executeQuery(
             `SELECT receipt_number FROM receipts 
-       WHERE invoice_id = ? AND receipt_number LIKE ? 
-       ORDER BY id DESC LIMIT 1`,
-            [invoice_id, `${basePrefix}%`]
+            WHERE invoice_id = ? AND receipt_number LIKE ? 
+            ORDER BY id DESC LIMIT 1`,
+                    [invoice_id, `${basePrefix}%`]
         );
 
         let newCounter = 1;
@@ -147,7 +156,7 @@ export const addReceipt = async (req, res) => {
         }
 
         const formattedCounter = String(newCounter).padStart(4, "0");
-        const receipt_number = `${basePrefix}${formattedCounter}`;
+        const receipt_number = `${basePrefix}-${formattedCounter}`;
         // ================================================
 
         const amount_in_words = toWords(parseInt(amount_received)) + ' Rupees Only';
@@ -169,6 +178,52 @@ export const addReceipt = async (req, res) => {
             message: 'Receipt added successfully',
             receipt_number,
             balance_remaining: balance <= 0 ? 0 : balance
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
+
+//get receipt by receipt id
+export const getReceiptsByReceiptId = async (req, res) => {
+    const receipt_id = req.params.receipt_id;
+    try {
+        if (!receipt_id) {
+            return res.status(400).json({
+                message: "Receipt ID is required"
+            });
+        };
+
+        // Step 1: Get invoice with client info
+        // const receiptData = await executeQuery(
+        //     `SELECT *
+        //     FROM receipts 
+        //     WHERE id = ?`,
+        //     [receipt_id]
+        // );
+
+        const receiptData = await executeQuery(
+            `
+            SELECT 
+                r.*,
+                i.invoice_number
+            FROM receipts r
+            LEFT JOIN invoice i 
+                ON r.invoice_id = i.id
+            WHERE r.id = ?
+            `,
+            [receipt_id]
+        );
+
+
+        if (receiptData.length === 0) {
+            return res.status(404).json({ message: 'Receipt not found' });
+        }
+
+        return res.status(200).json({
+            message: "Receipt data fetched successfully",
+            data: receiptData[0]
         });
     } catch (error) {
         console.error(error);
@@ -236,9 +291,6 @@ export const getAllReceipts = async (req, res) => {
         res.status(500).json({ message: 'Server error', error });
     }
 };
-
-
-
 
 // Get Receipts by Invoice ID
 export const getReceiptsByInvoiceNumber = async (req, res) => {
@@ -345,37 +397,84 @@ export const getReceiptsByClient = async (req, res) => {
 
 
 // Update Receipt
-export const updateReceipt = async (req, res) => {
-    const receiptId = req.params.receiptId;
-    const {
-        milestone_name,
-        amount_received,
-        payment_mode,
-        transaction_ref,
-        authorized_by
-    } = req.body;
+// export const updateReceipt = async (req, res) => {
+//     const receiptId = req.params.receiptId;
+//     const {
+//         invoice_number,
+//         milestone_name,
+//         amount_received,
+//         payment_mode,
+//         transaction_ref,
+//         authorized_by
+//     } = req.body;
 
-    try {
-        const existing = await executeQuery('SELECT * FROM receipts WHERE id = ?', [receiptId]);
-        if (existing.length === 0) return res.status(404).json({ message: 'Receipt not found' });
+//     try {
+//         const existing = await executeQuery('SELECT * FROM receipts WHERE id = ?', [receiptId]);
 
-        await executeQuery(
-            `UPDATE receipts SET 
-        milestone_name = ?, 
-        amount_received = ?, 
-        payment_mode = ?, 
-        transaction_ref = ?, 
-        authorized_by = ?, 
-        updated_at = CURRENT_TIMESTAMP 
-      WHERE id = ?`,
-            [milestone_name, amount_received, payment_mode, transaction_ref, authorized_by, receiptId]
-        );
+//         if (existing.length === 0) return res.status(404).json({ message: 'Receipt not found' });
 
-        res.json({ message: 'Receipt updated successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error });
-    }
-};
+//         const receivedAmount = parseFloat(amount_received);
+
+//         if (isNaN(receivedAmount) || receivedAmount <= 0) {
+//             return res.status(400).json({
+//                 message: "Amount received must be a valid positive number."
+//             });
+//         }
+
+
+//         const invoiceData = await executeQuery(
+//             'SELECT id, total_payable_amount FROM invoice WHERE invoice_number = ?',
+//             [invoice_number]
+//         );
+
+//         if (invoiceData.length === 0) {
+//             return res.status(404).json({ message: 'Invoice not found' });
+//         }
+
+//         const invoice = invoiceData[0];
+//         const invoice_id = invoice.id;
+
+//         const totalRow = await executeQuery(
+//             `SELECT COALESCE(SUM(amount_received), 0) AS total
+//             FROM receipts
+//             WHERE invoice_id = ? AND id != ?`,
+//             [invoice_id, receiptId]
+//         );
+
+//         const totalOtherReceipts = parseFloat(totalRow[0].total);
+//         const newTotalReceived = totalOtherReceipts + receivedAmount;
+
+
+//         if (newTotalReceived > parseFloat(invoice.total_payable_amount)) {
+//             return res.status(400).json({
+//                 message: 'Amount exceeds invoice total amount.'
+//             });
+//         }
+
+//         const balance = parseFloat(invoice.total_payable_amount) - newTotalReceived;
+
+//         const amount_in_words = toWords(receivedAmount) + ' Rupees Only';
+
+//         await executeQuery(
+//             `UPDATE receipts SET 
+//                 milestone_name = ?, 
+//                 amount_received = ?, 
+//                 total_received_so_far = ?,
+//                 balance_remaining = ?,
+//                 amount_in_words = ?,
+//                 payment_mode = ?, 
+//                 transaction_ref = ?, 
+//                 authorized_by = ?, 
+//                 updated_at = CURRENT_TIMESTAMP 
+//                 WHERE id = ?`,
+//                 [milestone_name, receivedAmount,newTotalReceived, balance, amount_in_words,payment_mode, transaction_ref, authorized_by, receiptId]
+//         );
+
+//         res.json({ message: 'Receipt updated successfully' });
+//     } catch (error) {
+//         res.status(500).json({ message: 'Server error', error });
+//     }
+// };
 
 // Delete Receipt
 export const deleteReceipt = async (req, res) => {
@@ -460,5 +559,112 @@ export const downloadReceiptListExcel = async (req, res) => {
         if (!res.headersSent) {
             res.status(500).json({ message: "Failed to generate receipt list Excel file" });
         }
+    }
+};
+
+
+//By Jayashri Bharambe 12-06-2026
+export const updateReceipt = async (req, res) => {
+    const receiptId = req.params.receiptId;
+    const {
+        invoice_number,
+        milestone_name,
+        amount_received,
+        payment_mode,
+        transaction_ref,
+        authorized_by
+    } = req.body;
+
+    try {
+        const existingReceipt  = await executeQuery('SELECT * FROM receipts WHERE id = ?', [receiptId]);
+
+        if (existingReceipt .length === 0) return res.status(404).json({ message: 'Receipt not found' });
+
+        const receipt = existingReceipt[0];
+
+        const oldAmount = parseFloat(receipt.amount_received);
+        const newAmount = parseFloat(amount_received);
+
+
+        if (isNaN(newAmount ) || newAmount  <= 0) {
+            return res.status(400).json({
+                message: "Amount received must be a valid positive number."
+            });
+        }
+
+        const difference = newAmount - oldAmount;
+
+        const invoiceData  = await executeQuery(
+            `SELECT id, total_payable_amount
+            FROM invoice
+            WHERE id = ?`,
+            [receipt.invoice_id]
+        );
+
+        if (invoiceData .length === 0) {
+            return res.status(404).json({ message: 'Invoice not found' });
+        }
+
+        const invoice = invoiceData [0];
+        const invoice_id = invoice.id;
+
+        const totalPayable = parseFloat(invoice.total_payable_amount);
+
+        const totalRow = await executeQuery(
+            `SELECT COALESCE(SUM(amount_received), 0) AS total
+            FROM receipts
+            WHERE invoice_id = ? AND id != ?`,
+            [invoice_id, receiptId]
+        );
+
+        const totalOtherReceipts = parseFloat(totalRow[0].total);
+        const newTotalReceived = totalOtherReceipts + newAmount;
+
+
+        if (newTotalReceived > totalPayable) {
+            return res.status(400).json({
+                message: `Total received amount cannot exceed invoice amount (${totalPayable})`
+            });
+        }
+
+        const balance = parseFloat(receipt.balance_remaining) - difference;
+
+        const totalReceivedSoFar = parseFloat(receipt.total_received_so_far) + difference;
+
+        const amount_in_words = toWords(newAmount) + ' Rupees Only';
+
+        await executeQuery(
+            `UPDATE receipts SET 
+                milestone_name = ?, 
+                amount_received = ?, 
+                total_received_so_far = ?,
+                balance_remaining = ?,
+                amount_in_words = ?,
+                payment_mode = ?, 
+                transaction_ref = ?, 
+                authorized_by = ?, 
+                updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?`,
+                [milestone_name, newAmount,totalReceivedSoFar, balance, amount_in_words,payment_mode, transaction_ref, authorized_by, receiptId]
+        );
+
+        await executeQuery(
+            `UPDATE receipts
+            SET 
+            total_received_so_far = total_received_so_far + ?,
+            balance_remaining = balance_remaining - ?
+            WHERE invoice_id = ?
+            AND id > ?`,
+            [
+                difference,
+                difference,
+                invoice_id,
+                receiptId
+            ]
+        );
+
+        res.json({ message: 'Receipt updated successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
     }
 };

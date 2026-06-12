@@ -11,6 +11,9 @@ export const verifyToken = (req, res, next) => {
     // Extract the token from the Bearer string
     const token = authHeader.split(' ')[1]; // Example: Bearer <token>
 
+    console.log("token",token);
+    
+
     if (!token) {
         return res.status(401).json({ message: 'Access denied, token missing' });
     }
@@ -18,6 +21,8 @@ export const verifyToken = (req, res, next) => {
     // Verify the token
     jwt.verify(token,process.env.JWT_SECRET, (err, decoded) => {
         if (err) {
+            console.log("Change passworde error",err);
+            
             return res.status(403).json({ message: 'Invalid token' });
         }
 

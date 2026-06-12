@@ -1,84 +1,5 @@
 import { executeQuery } from '../../config/db.js';
 
-
-
-
-
-// export const createInvoice = async (req, res) => {
-//     const {
-//         invoice_number,
-//         client_name,
-//         client_phone,
-//         client_email,
-//         gst_no,
-//         client_address,
-//         pin_code,
-//         total_amount,
-//         cgst,
-//         sgst,
-//         discount,
-//         total_payable_amount,
-//         total_payable_amount_in_words,
-//         department,
-//         invoice_date,
-//         due_days,
-//         items // Expecting an array of invoice items from frontend
-//     } = req.body;
-
-//     console.log(items);
-
-//     console.log('📦 Full Request Body:', req.body);
-
-//     // Handling signature file
-//     const signature = req.file ? req.file.buffer : null;
-//     const signatureContentType = req.file ? req.file.mimetype : null;
-
-//     if (!invoice_number || !client_name || !client_phone || !client_email || !items || items.length === 0) {
-//         return res.status(400).json({ message: 'Missing required fields or empty items list' });
-//     }
-
-//     try {
-//         // Insert into Invoice table
-//         const invoiceQuery = `
-//             INSERT INTO Invoice 
-//             (invoice_number, client_name, client_phone, client_email, gst_no, client_address, pin_code, 
-//             total_amount, cgst,sgst, discount, total_payable_amount,total_payable_amount_in_words, department, invoice_date,due_days, signature, signature_content_type)
-//             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?)`;
-
-//         const invoiceValues = [
-//             invoice_number, client_name, client_phone, client_email, gst_no, client_address, pin_code,
-//             total_amount, cgst,sgst, discount, total_payable_amount,total_payable_amount_in_words, department, invoice_date,due_days, signature, signatureContentType
-//         ];
-
-//         const result = await executeQuery(invoiceQuery, invoiceValues);
-//         const invoiceId = result.insertId; // Get the newly created invoice ID
-
-//         // Insert multiple items into InvoiceItems table
-//         const itemQuery = `
-//             INSERT INTO InvoiceItems (invoice_id, productCode, description, price, quantity, productTotalAmt) 
-//             VALUES ?`;
-
-//         const itemValues = JSON.parse(items).map(item => [
-//             invoiceId,
-//             item.productCode,
-//             item.description,
-//             item.price,
-//             item.quantity,
-//             item.productTotalAmt
-//         ]);
-
-//         await executeQuery(itemQuery, [itemValues]);
-
-//         res.status(201).json({ message: 'Invoice created successfully!', invoiceId });
-//     } catch (error) {
-//         console.error('Error creating invoice:', error);
-//         res.status(500).json({ message: 'Server error', error });
-//     }
-// };
-
-
-
-
 export const createInvoice = async (req, res) => {
     const {
         client_name,
@@ -96,6 +17,8 @@ export const createInvoice = async (req, res) => {
         department,
         invoice_date,
         due_days,
+        note,
+        description,
         items // Expecting an array of invoice items from frontend
     } = req.body;
 
@@ -120,8 +43,8 @@ export const createInvoice = async (req, res) => {
         // Utility: Map department to prefix
         const getPrefix = (department) => {
             const map = {
-                wesolutize: 'WES',
-                myresearchroom: 'MRR'
+                wesolutize: 'WES-INV',
+                myresearchroom: 'MRR-INV'
             };
             return map[department.toLowerCase()] || 'INV';
         };
@@ -142,7 +65,7 @@ export const createInvoice = async (req, res) => {
 
         let nextNumber = 1;
         if (lastInvoice.length > 0) {
-            const lastNumPart = lastInvoice[0].invoice_number.split('-')[2];
+            const lastNumPart = lastInvoice[0].invoice_number.split('-')[3];
             const lastNum = parseInt(lastNumPart);
             nextNumber = lastNum + 1;
         }
@@ -150,19 +73,28 @@ export const createInvoice = async (req, res) => {
         // Step 3: Generate new invoice number
         const invoice_number = `${invoicePrefix}-${String(nextNumber).padStart(4, '0')}`;
 
+        const parsedDescription = description
+            ? JSON.parse(description)
+            : [];
+
+        const descriptionWithIds = parsedDescription.map((desc, index) => ({
+            id: index + 1,
+            value: desc
+        }));
+
         // Step 4: Insert Invoice
         const invoiceQuery = `
             INSERT INTO invoice 
             (invoice_number, client_name, client_phone, client_email, gst_no, client_address, pin_code, 
             total_amount, cgst, sgst, discount, total_payable_amount, total_payable_amount_in_words, 
-            department, invoice_date, due_days, signature, signature_content_type)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            department, invoice_date, due_days, note, description,signature, signature_content_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?)
         `;
 
         const invoiceValues = [
             invoice_number, client_name, client_phone, client_email, gst_no, client_address, pin_code,
             total_amount, cgst, sgst, discount, total_payable_amount, total_payable_amount_in_words,
-            department, invoice_date, due_days, signature, signatureContentType
+            department, invoice_date, due_days, note || null, JSON.stringify(descriptionWithIds),signature, signatureContentType
         ];
 
         const result = await executeQuery(invoiceQuery, invoiceValues);
@@ -191,9 +123,6 @@ export const createInvoice = async (req, res) => {
         res.status(500).json({ message: 'Server error', error });
     }
 };
-
-
-
 
 export const getInvoices = async (req, res) => {
     try {
@@ -229,95 +158,244 @@ export const getInvoices = async (req, res) => {
     }
 };
 
+// export const getFilteredInvoices = async (req, res) => {
+//     const { invoice_date, department, start_date, end_date,paymentStatus, page = 1, limit = 10 } = req.query;
 
+//     try {
+//         let sql = `
+//             SELECT id, invoice_number, client_name, created_at, total_payable_amount,
+//             DATE_FORMAT(CONVERT_TZ(invoice_date, '+00:00', '+05:30'), '%Y-%m-%d') AS invoice_date, 
+//             department 
+//             FROM invoice
+//         `;
+//         const params = [];
+//         const conditions = [];
 
+//         if (invoice_date) {
+//             conditions.push('DATE(CONVERT_TZ(invoice_date, "+00:00", "+05:30")) = ?');
+//             params.push(invoice_date);
+//         }
 
+//         if (start_date && end_date) {
+//             conditions.push('DATE(CONVERT_TZ(invoice_date, "+00:00", "+05:30")) BETWEEN ? AND ?');
+//             params.push(start_date, end_date);
+//         }
 
+//         if (department) {
+//             conditions.push('department = ?');
+//             params.push(department);
+//         }
 
+//         if (paymentStatus === 'completed') {
+//             conditions.push('total_payable_amount = 0');
+//         }
 
+//         if (paymentStatus === 'pending') {
+//             conditions.push('total_payable_amount > 0');
+//         }
+
+//         if (conditions.length > 0) {
+//             sql += ' WHERE ' + conditions.join(' AND ');
+//         }
+
+//         // Pagination
+//         const offset = (parseInt(page) - 1) * parseInt(limit);
+//         sql += ' ORDER BY invoice_date DESC LIMIT ? OFFSET ?';
+//         params.push(parseInt(limit), offset);
+
+//         // Fetch invoices
+//         const invoices = await executeQuery(sql, params);
+
+//         // Fetch total count
+//         let countSql = `SELECT COUNT(*) AS total FROM invoice`;
+//         if (conditions.length > 0) {
+//             countSql += ' WHERE ' + conditions.join(' AND ');
+//         }
+//         const totalResult = await executeQuery(countSql, params.slice(0, -2)); // Exclude LIMIT & OFFSET params
+//         const total = totalResult[0].total;
+//         const totalPages = Math.ceil(total / parseInt(limit));
+
+//         // Determine next & previous page
+//         const nextPage = parseInt(page) < totalPages ? parseInt(page) + 1 : null;
+//         const prevPage = parseInt(page) > 1 ? parseInt(page) - 1 : null;
+
+//         // Send response
+//         res.status(200).json({
+//             totalRecords: total,
+//             currentPage: parseInt(page),
+//             totalPages,
+//             nextPage,
+//             prevPage,
+//             invoices,
+//         });
+//     } catch (error) {
+//         res.status(500).json({ message: 'Error fetching invoices', error });
+//     }
+// };
 
 export const getFilteredInvoices = async (req, res) => {
-    const { invoice_date, department, start_date, end_date, page = 1, limit = 10 } = req.query;
+    const {
+        invoice_date,
+        department,
+        start_date,
+        end_date,
+        paymentStatus,
+        page = 1,
+        limit = 10
+    } = req.query;
 
     try {
         let sql = `
-            SELECT id, invoice_number, client_name, 
-            DATE_FORMAT(CONVERT_TZ(invoice_date, '+00:00', '+05:30'), '%Y-%m-%d') AS invoice_date, 
-            department 
-            FROM invoice
+            SELECT 
+                i.id,
+                i.invoice_number,
+                i.client_name,
+                i.created_at,
+                i.total_payable_amount,
+                DATE_FORMAT(
+                    CONVERT_TZ(i.invoice_date, '+00:00', '+05:30'),
+                    '%Y-%m-%d'
+                ) AS invoice_date,
+                i.department,
+                COALESCE(SUM(r.amount_received), 0) AS total_received,
+                CASE
+                    WHEN COALESCE(SUM(r.amount_received), 0) >= i.total_payable_amount 
+                    THEN 'completed'
+                    ELSE 'pending'
+                END AS payment_status
+            FROM invoice i
+            LEFT JOIN receipts r
+                ON r.invoice_id = i.id
         `;
+
         const params = [];
         const conditions = [];
 
         if (invoice_date) {
-            conditions.push('DATE(CONVERT_TZ(invoice_date, "+00:00", "+05:30")) = ?');
+            conditions.push(
+                'DATE(CONVERT_TZ(i.invoice_date, "+00:00", "+05:30")) = ?'
+            );
             params.push(invoice_date);
         }
 
         if (start_date && end_date) {
-            conditions.push('DATE(CONVERT_TZ(invoice_date, "+00:00", "+05:30")) BETWEEN ? AND ?');
+            conditions.push(
+                'DATE(CONVERT_TZ(i.invoice_date, "+00:00", "+05:30")) BETWEEN ? AND ?'
+            );
             params.push(start_date, end_date);
         }
 
         if (department) {
-            conditions.push('department = ?');
+            conditions.push('i.department = ?');
             params.push(department);
         }
 
         if (conditions.length > 0) {
-            sql += ' WHERE ' + conditions.join(' AND ');
+            sql += ` WHERE ${conditions.join(' AND ')}`;
+        }
+
+        sql += `
+            GROUP BY
+                i.id,
+                i.invoice_number,
+                i.client_name,
+                i.created_at,
+                i.total_payable_amount,
+                i.invoice_date,
+                i.department
+        `;
+
+        // Filter by payment status
+        if (paymentStatus === 'completed') {
+            sql += `
+                HAVING COALESCE(SUM(r.amount_received), 0) >= i.total_payable_amount
+            `;
+        }
+
+        if (paymentStatus === 'pending') {
+            sql += `
+                HAVING COALESCE(SUM(r.amount_received), 0) < i.total_payable_amount
+            `;
         }
 
         // Pagination
         const offset = (parseInt(page) - 1) * parseInt(limit);
-        sql += ' ORDER BY invoice_date DESC LIMIT ? OFFSET ?';
+
+        sql += `
+            ORDER BY i.invoice_date DESC
+            LIMIT ? OFFSET ?
+        `;
+
         params.push(parseInt(limit), offset);
 
-        // Fetch invoices
         const invoices = await executeQuery(sql, params);
 
-        // Fetch total count
-        let countSql = `SELECT COUNT(*) AS total FROM invoice`;
+        // Count Query
+        let countSql = `
+            SELECT COUNT(*) AS total
+            FROM (
+                SELECT i.id ,i.total_payable_amount
+                FROM invoice i
+                LEFT JOIN receipts r
+                    ON r.invoice_id = i.id
+        `;
+
         if (conditions.length > 0) {
-            countSql += ' WHERE ' + conditions.join(' AND ');
+            countSql += ` WHERE ${conditions.join(' AND ')}`;
         }
-        const totalResult = await executeQuery(countSql, params.slice(0, -2)); // Exclude LIMIT & OFFSET params
-        const total = totalResult[0].total;
+
+        countSql += ` GROUP BY i.id `;
+
+        if (paymentStatus === 'completed') {
+            countSql += `
+                HAVING COALESCE(SUM(r.amount_received), 0) >= i.total_payable_amount
+            `;
+        }
+
+        if (paymentStatus === 'pending') {
+            countSql += `
+                HAVING COALESCE(SUM(r.amount_received), 0) < i.total_payable_amount
+            `;
+        }
+
+        countSql += ` ) AS filtered_invoices`;
+
+        const countResult = await executeQuery(
+            countSql,
+            params.slice(0, conditions.length === 0 ? 0 : params.length - 2)
+        );
+
+        const total = countResult[0].total;
         const totalPages = Math.ceil(total / parseInt(limit));
 
-        // Determine next & previous page
-        const nextPage = parseInt(page) < totalPages ? parseInt(page) + 1 : null;
-        const prevPage = parseInt(page) > 1 ? parseInt(page) - 1 : null;
-
-        // Send response
         res.status(200).json({
             totalRecords: total,
             currentPage: parseInt(page),
             totalPages,
-            nextPage,
-            prevPage,
-            invoices,
+            nextPage: page < totalPages ? Number(page) + 1 : null,
+            prevPage: page > 1 ? Number(page) - 1 : null,
+            invoices
         });
+
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching invoices', error });
+        console.error(error);
+
+        res.status(500).json({
+            message: 'Error fetching invoices',
+            error: error.message
+        });
     }
 };
-
-
-
-
-
-
 
 export const getInvoiceByNumber = async (req, res) => {
     const { invoice_number } = req.params;
 
     try {
         let sql = `
-            SELECT invoice_number, department, client_name, client_phone, client_address, gst_no, 
+            SELECT invoice_number, department, client_name,client_email, client_phone, client_address,   gst_no, pin_code,
                    DATE_FORMAT(CONVERT_TZ(invoice_date, '+00:00', '+05:30'), '%Y-%m-%d %H:%i:%s') AS invoice_date, 
                    total_amount, discount, total_payable_amount, total_payable_amount_in_words, 
-                   cgst, sgst, due_days, signature, signature_content_type
+                   cgst, sgst, due_days, note,description,signature, signature_content_type
             FROM invoice
             WHERE invoice_number = ?`;
 
@@ -344,12 +422,6 @@ export const getInvoiceByNumber = async (req, res) => {
     }
 };
 
-
-
-
-
-
-
 export const getInvoiceCountByDepartment = async (req, res) => {
     try {
         const query = `
@@ -366,11 +438,6 @@ export const getInvoiceCountByDepartment = async (req, res) => {
         res.status(500).json({ message: 'Error fetching invoice counts', error });
     }
 };
-
-
-
-
-
 
 //used in receipts
 export const getInvoiceDetailsByInvoiceNumber = async (req, res) => {
@@ -418,5 +485,156 @@ export const getInvoiceDetailsByInvoiceNumber = async (req, res) => {
     } catch (error) {
         console.error("Error fetching invoice:", error);
         res.status(500).json({ message: 'Error fetching invoice', error });
+    }
+};
+
+export const editInvoice = async (req, res) => {
+    const {
+        client_name,
+        client_phone,
+        client_email,
+        gst_no,
+        client_address,
+        pin_code,
+        total_amount,
+        cgst,
+        sgst,
+        discount,
+        total_payable_amount,
+        due_days,
+        note,
+        description,
+        items 
+    } = req.body;
+
+    const { invoice_number } = req.params;
+
+    console.log('📦 Full Request Body for edit:', req.body);
+
+    // const signature = req.file ? req.file.buffer : null;
+    // const signatureContentType = req.file ? req.file.mimetype : null;
+
+
+    try {
+         console.log("one");
+
+        const parsedItems = JSON.parse(items);
+
+        if (
+            !client_name ||
+            !client_phone ||
+            !client_email ||
+            !parsedItems ||
+            parsedItems.length === 0
+        ) {
+            return res.status(400).json({
+                message: "Missing required fields or empty items list"
+            });
+        }
+
+
+        const invoice = await executeQuery(
+            "SELECT id FROM invoice WHERE invoice_number = ?",
+            [invoice_number]
+        );
+        console.log("two");
+
+        if (invoice.length === 0) {
+            return res.status(404).json({
+                message: "Invoice not found"
+            });
+        }
+
+        const invoiceId = invoice[0].id;
+
+        // await executeQuery(
+        //     "UPDATE invoice SET description = NULL WHERE invoice_number = ?",
+        //     [invoice_number]
+        // );
+
+        console.log("thyree");
+
+        const parsedDescription =
+            typeof description === "string"
+                ? JSON.parse(description)
+                : description || [];
+
+        const descriptionWithIds = parsedDescription.map((desc, index) => ({
+            id: index + 1,
+            value: desc
+        }));
+        console.log("four");
+
+        const updateInvoiceQuery = `
+            UPDATE invoice
+            SET
+                client_name = ?,
+                client_phone = ?,
+                client_email = ?,
+                gst_no = ?,
+                client_address = ?,
+                pin_code = ?,
+                total_amount = ?,
+                cgst = ?,
+                sgst = ?,
+                discount = ?,
+                total_payable_amount = ?,
+                due_days = ?,
+                note = ?,
+                description = ?
+            WHERE invoice_number = ?
+        `;
+
+        await executeQuery(updateInvoiceQuery, [
+            client_name,
+            client_phone,
+            client_email,
+            gst_no,
+            client_address,
+            pin_code,
+            total_amount,
+            cgst,
+            sgst,
+            discount,
+            total_payable_amount,
+            due_days,
+            note || null,
+            JSON.stringify(descriptionWithIds),
+            invoice_number
+        ]);
+        console.log("five");
+
+        await executeQuery(
+            "DELETE FROM invoiceitems WHERE invoice_id = ?",
+            [invoiceId]
+        );
+
+        const itemValues = parsedItems.map(item => [
+            invoiceId,
+            item.productCode,
+            item.description,
+            item.price,
+            item.quantity,
+            item.productTotalAmt
+        ]);
+
+        console.log("six");
+        if (itemValues.length > 0) {
+            await executeQuery(
+                `INSERT INTO invoiceitems
+                (invoice_id, productCode, description, price, quantity, productTotalAmt)
+                VALUES ?`,
+                [itemValues]
+            );
+        }
+
+        console.log("seven");
+
+        res.status(200).json({ message: 'Invoice updated successfully!', invoiceId, invoice_number });
+    } catch (error) {
+        console.error('Error updating invoice:', error);
+        console.log(error);
+        
+        res.status(500).json({ message: 'Server error', error });
     }
 };

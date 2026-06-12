@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { createInvoice, getFilteredInvoices, getInvoiceByNumber, getInvoiceCountByDepartment, getInvoiceDetailsByInvoiceNumber, getInvoices } from '../../controller/invoice/invoice.js';
+import { createInvoice, editInvoice, getFilteredInvoices, getInvoiceByNumber, getInvoiceCountByDepartment, getInvoiceDetailsByInvoiceNumber, getInvoices } from '../../controller/invoice/invoice.js';
 
 const router = express.Router();
 
@@ -21,6 +21,10 @@ const upload = multer({
 // Route to create a new invoice
 router.post('/createInvoice', upload.single('signature'), createInvoice);
 // http://localhost:8000/api/invoice/createInvoice
+
+
+//Route to edit invoice
+router.patch('/editInvoice/:invoice_number',  upload.none(),  editInvoice);
 
 
 // ----------------------------all fields get--------------------------

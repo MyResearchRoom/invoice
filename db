@@ -183,7 +183,7 @@ CREATE TABLE receipts (
 );
 
 ALTER TABLE user
-ADD COLUMN otp VARCHAR(10),
+ADD COLUMN otp VARCHAR(10);
 
 ALTER TABLE user
 MODIFY COLUMN role ENUM('Admin', 'UserAll', 'EmployeeManager', 'ClientManager');
@@ -228,3 +228,11 @@ ADD COLUMN transactionId VARCHAR(255) AFTER loanBalance;
 
 ALTER TABLE salary_slips
 ADD COLUMN salaryDate DATETIME AFTER paySlipMonth;
+
+---updated on 08-06-2026 by Jayashri Bharambe
+
+
+ALTER TABLE invoice
+ADD COLUMN note VARCHAR(255) DEFAULT NULL AFTER due_days,
+ADD COLUMN description JSON DEFAULT NULL AFTER note;
+
